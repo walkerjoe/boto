@@ -951,8 +951,13 @@ class Key(S3Key):
             headers=headers, query_args='compose',
             data=compose_req_xml)
         if resp.status < 200 or resp.status > 299:
+            resp_body = b""
+            try:
+                resp_body = resp.read()
+            except (EOFError, IOError):
+                resp_body = b""
             raise self.bucket.connection.provider.storage_response_error(
-                resp.status, resp.reason, resp.read())
+                resp.status, resp.reason, resp_body)
 
         # Return the generation so that the result URI can be built with this
         # for automatic parallel uploads.
