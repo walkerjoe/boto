@@ -862,34 +862,79 @@ def notify(subject, body=None, html_body=None, to_string=None,
             boto.log.exception('notify failed')
 
 
-def _TryEncodings(string, conv_method):
-    new_string = None
-    encodings = ["utf-8", "latin-1", "ascii", "cp1252"]
+def _TryEncodings(val, conv_method):
+    """
+    Converts value (val) using the conversion method (conv_method) supplied.
 
-    def _try_enc(string, encoding):
+    :param val: Any value/type that can be represented as text/binary strings.
+
+    :param conv_method: The conversion method to use in converting val to
+        the specified type; return type dictated by conv_method. Current
+        methods that can be passed in as conv_method are any of the
+        (3 - as of six v1.12) six.ensure_ methods (ensure_str, ensure_binary,
+        ensure_text).
+
+    :rtype: Union(bytes, str, unicode)
+    :return: Returns the format that corresponds to the six.ensure_ method
+        passed in as conv_method.
+    """
+    def _try_enc(val, encoding):
         try:
-            return conv_method(string, encoding)
+            return conv_method(val, encoding)
         except TypeError:
-            return conv_method(str(string), encoding)
+            return conv_method(str(val), encoding)
         except:
             return None
 
+    encodings = ["utf-8", "latin-1", "ascii", "cp1252"]
     enc_index = 0
-    while new_string is None and enc_index < len(encodings):
-        new_string = _try_enc(string, encodings[enc_index])
+
+    while enc_index < len(encodings):
+        new_string = _try_enc(val, encodings[enc_index])
         enc_index += 1
-    return new_string if not None else string
+        if new_string is not None:
+            return new_string
+    # Getting target type for error message since type can varray
+    conv_type = type(conv_method('error'))
+    raise ValueError("Unable to convert value to {0}".format(conv_type))
 
 
 def val_to_binary(val):
+    """
+    Attempts to convert the value passed in to binary-type string (Python 2 str,
+        Python 3 bytes)
+
+    :param val: The value that will be converted to binary text.
+
+    :return: Returns the binary string representation of val
+    :rtype: Union(str, bytes)
+    """
     return _TryEncodings(val, six.ensure_binary)
 
 
 def val_to_text(val):
+    """
+    Attempts to convert the value passed in to text-type string (Python 2
+        unicode, Python 3 str)
+
+    :param val: The value that will be converted to unicode text.
+
+    :return: Returns the text string representation of val
+    :rtype: Union(unicode, str)
+    """
     return _TryEncodings(val, six.ensure_text)
 
 
 def val_to_str(val):
+    """
+    Attempts to convert the value passed in to binary-type string (Python 2 str,
+        Python 3 str)
+
+    :param val: The value that will be converted to str.
+
+    :return: Returns the str representation of val.
+    :rtype: str
+    """
     return _TryEncodings(val, six.ensure_str)
 
 
