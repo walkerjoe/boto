@@ -40,7 +40,7 @@ from boto.gs.lifecycle import LifecycleConfig
 from boto.gs.key import Key as GSKey
 from boto.s3.acl import Policy
 from boto.s3.bucket import Bucket as S3Bucket
-from boto.utils import get_utf8_value
+from boto.utils import val_to_str
 from boto.compat import quote
 from boto.compat import six
 
@@ -883,7 +883,7 @@ class Bucket(S3Bucket):
 
         body = self.WebsiteBody % (main_page_frag, error_frag)
         response = self.connection.make_request(
-            'PUT', get_utf8_value(self.name), data=get_utf8_value(body),
+            'PUT', val_to_str(self.name), data=val_to_str(body),
             query_args='websiteConfig', headers=headers)
         body = response.read()
         if response.status == 200:

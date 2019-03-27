@@ -859,17 +859,35 @@ def notify(subject, body=None, html_body=None, to_string=None,
             boto.log.exception('notify failed')
 
 
-def get_utf8_value(value):
-    if isinstance(value, bytes):
-        value.decode('utf-8')
-        return value
-    if not isinstance(value, six.string_types):
-        value = six.text_type(value)
+def _TryEncodings(string, conv_method):
+    new_string = None
+    encodings = ["utf-8", "latin-1", "ascii", "cp1252"]
 
-    if isinstance(value, six.text_type):
-        value = value.encode('utf-8')
+    def _try_enc(string, encoding):
+        try:
+            return conv_method(string, encoding)
+        except TypeError:
+            return conv_method(str(string), encoding)
+        except:
+            return None
 
-    return value
+    enc_index = 0
+    while new_string is None and enc_index < len(encodings):
+        new_string = _try_enc(string, encodings[enc_index])
+        enc_index += 1
+    return new_string if not None else string
+
+
+def val_to_binary(val):
+    return _TryEncodings(val, six.ensure_binary)
+
+
+def val_to_text(val):
+    return _TryEncodings(val, six.ensure_text)
+
+
+def val_to_str(val):
+    return _TryEncodings(val, six.ensure_str)
 
 
 def mklist(value):
